@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  frontend:
+    environment:
+      NODE_ENV: development
+    command: yarn dev -o
+  #Nginx Service
+  server:
+    volumes:
+      - ./server/conf.d/development:/etc/nginx/conf.d
