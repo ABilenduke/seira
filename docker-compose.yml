@@ -47,14 +47,19 @@ services:
     #   retries: 3
     #   timeout: 5s
   
-  #Node Service
+  #Redis Stack Service
   database:
-    image: 'redis:alpine'
+    build: ./database
     container_name: redis_database
     ports:
       - '${FORWARD_REDIS_PORT:-6379}:6379'
+    entrypoint: redis-server --appendonly yes --requirepass $REDIS_PASSWORD --maxmemory 512mb --maxmemory-policy allkeys-lru
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
     volumes:
       - 'database-volume:/data'
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
     networks:
       - backend-network
     healthcheck:
@@ -104,3 +109,7 @@ volumes:
       device: ./frontend/node_modules
   database-volume:
     driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./database/appdata
