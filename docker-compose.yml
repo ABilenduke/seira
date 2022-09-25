@@ -4,11 +4,13 @@ services:
   #Flask Service
   backend:
     build: ./backend
-    command: gunicorn --bind 0.0.0.0:5000 wsgi:server
     image: flask_backend
     container_name: flask_backend
     restart: unless-stopped
     tty: true
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+      REDIS_OM_URL: redis://default:${REDIS_PASSWORD:-password}@database:6379
     ports:
       - '5000:5000'
     working_dir: /var/www/flask_backend
@@ -49,15 +51,20 @@ services:
   
   #Redis Stack Service
   database:
-    build: ./database
     container_name: redis_database
     ports:
       - '${FORWARD_REDIS_PORT:-6379}:6379'
-    entrypoint: redis-server --appendonly yes --requirepass $REDIS_PASSWORD --maxmemory 512mb --maxmemory-policy allkeys-lru
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    # entrypoint: redis-server --appendonly yes --requirepass $REDIS_PASSWORD --maxmemory 512mb --maxmemory-policy allkeys-lru
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+      REDIS_ARGS: "--requirepass ${REDIS_PASSWORD:-password} --appendonly yes"
     volumes:
-      - 'database-volume:/data'
+      - './database/appdata:/data'
+      # - ./database/redis.conf:/redis-stack.conf
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
     networks:
@@ -103,13 +110,13 @@ networks:
 volumes:
   node-modules-volume:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./frontend/node_modules
+    # driver_opts:
+    #   type: none
+    #   o: bind
+    #   device: ./frontend/node_modules
   database-volume:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./database/appdata
+    # driver_opts:
+    #   type: none
+    #   o: bind
+    #   device: ./database/appdata

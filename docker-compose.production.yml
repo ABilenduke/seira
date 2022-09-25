@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  #Flask Service
+  backend:
+    build:
+      context: ./backend
+      target: production
+    environment:
+      FLASK_ENV: production
+  #Nuxt Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+    environment:
+      NODE_ENV: production
+    command: yarn serve
+  #Redis Stack Service
+  database:
+    build:
+      context: ./database
+      dockerfile: production.Dockerfile
+  #Nginx Service
+  server:
+    volumes:
+      - ./server/conf.d/production:/etc/nginx/conf.d
