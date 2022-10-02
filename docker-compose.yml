@@ -11,15 +11,20 @@ services:
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REDIS_OM_URL: redis://default:${REDIS_PASSWORD:-password}@database:6379
+      APP_NAME: "Flask-Redis API"
+      APP_SETTINGS: app.config.DevelopmentConfig
+      MAIL_USE_TLS: False
+      MAIL_USE_SSL: True
     ports:
-      - '5000:5000'
+      - "5000:5000"
     working_dir: /var/www/flask_backend
     networks:
       - backend-network
     volumes:
-       - './backend:/var/www/flask_backend:cached'
+      - "./backend:/var/www/flask_backend:cached"
     depends_on:
       - database
+      - broker
     # healthcheck:
     #   test: curl --fail -s http://localhost:5000/ || exit 1
     #   interval: 1m30s
@@ -42,18 +47,18 @@ services:
     networks:
       - frontend-network
     volumes:
-       - './frontend:/var/www/nuxt_frontend:cached'
-       - 'node-modules-volume:/var/www/nuxt_frontend/node_modules'
+      - "./frontend:/var/www/nuxt_frontend:cached"
+      - "node-modules-volume:/var/www/nuxt_frontend/node_modules"
     # healthcheck:
     #   test: ["CMD", "redis-cli", "ping"]
     #   retries: 3
     #   timeout: 5s
-  
+
   #Redis Stack Service
   database:
     container_name: redis_database
     ports:
-      - '${FORWARD_REDIS_PORT:-6379}:6379'
+      - "${FORWARD_REDIS_PORT:-6379}:6379"
     deploy:
       replicas: 1
       restart_policy:
@@ -63,7 +68,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REDIS_ARGS: "--requirepass ${REDIS_PASSWORD:-password} --appendonly yes"
     volumes:
-      - './database/appdata:/data'
+      - "./database/appdata:/data"
       # - ./database/redis.conf:/redis-stack.conf
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
@@ -73,6 +78,17 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       retries: 3
       timeout: 5s
+
+  broker:
+    container_name: broker
+    image: rabbitmq:3.7.14-management
+    ports:
+      - "8888:8080"
+    environment:
+      - RABBITMQ_DEFAULT_USER=rabbit-user
+      - RABBITMQ_DEFAULT_PASS=rabbit-password
+    networks:
+      - backend-network
 
   #Nginx Service
   server:
@@ -90,10 +106,10 @@ services:
       - backend-network
       - frontend-network
     volumes:
-      - './server/nginx.conf:/etc/nginx/nginx.conf'
-      - './server/log/:/var/log/nginx'
-      - './server/certs/:/etc/nginx/certs'
-      - './server/certs/:/etc/ssl/certs'
+      - "./server/nginx.conf:/etc/nginx/nginx.conf"
+      - "./server/log/:/var/log/nginx"
+      - "./server/certs/:/etc/nginx/certs"
+      - "./server/certs/:/etc/ssl/certs"
     # healthcheck:
     #   test: ["CMD", "redis-cli", "ping"]
     #   retries: 3
@@ -110,10 +126,6 @@ networks:
 volumes:
   node-modules-volume:
     driver: local
-    # driver_opts:
-    #   type: none
-    #   o: bind
-    #   device: ./frontend/node_modules
   database-volume:
     driver: local
     # driver_opts:
