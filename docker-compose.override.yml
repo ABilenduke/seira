@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   #Flask Service
-  backend:
+  flask_backend:
     build:
       context: ./backend
       target: development
@@ -17,13 +17,13 @@ services:
       MAIL_USERNAME: ""
       MAIL_PASSWORD: ""
       MAIL_DEFAULT_SENDER: "no-reply@flask-redis.test"
-      CELERY_BROKER_URL: amqp://rabbit-user:rabbit-password@broker:5672/
+      CELERY_BROKER_URL: amqp://rabbit-user:rabbit-password@rabbitmq_broker:5672/
       CELERY_RESULT_BACKEND: rpc://
-      CELERY_BROKER_TEST_URL: amqp://rabbit-user:rabbit-password@broker:5672/
+      CELERY_BROKER_TEST_URL: amqp://rabbit-user:rabbit-password@rabbitmq_broker:5672/
     ports:
       - 5678:5678
   #Nuxt Frontend Service
-  frontend:
+  nuxt_frontend:
     build:
       context: ./frontend
       target: development
@@ -32,12 +32,12 @@ services:
     command: yarn dev -o
     # command: yarn dev-debug # for debugging WIP
   #Redis Stack Service
-  database:
+  redis_database:
     image: redis/redis-stack:7.0.2-RC1
     ports:
       - 8001:8001
   #Nginx Service
-  server:
+  nginx_server:
     volumes:
       - ./server/conf.d/development:/etc/nginx/conf.d
 

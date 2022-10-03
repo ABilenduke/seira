@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   #Flask Service
-  backend:
+  flask_backend:
     build: ./backend
     image: flask_backend
     container_name: flask_backend
@@ -10,7 +10,7 @@ services:
     tty: true
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
-      REDIS_OM_URL: redis://default:${REDIS_PASSWORD:-password}@database:6379
+      REDIS_OM_URL: redis://default:${REDIS_PASSWORD:-password}@redis_database:6379
       APP_NAME: "Flask-Redis API"
       APP_SETTINGS: app.config.DevelopmentConfig
       MAIL_USE_TLS: False
@@ -32,7 +32,7 @@ services:
     #   retries: 3
 
   #Node Service
-  frontend:
+  nuxt_frontend:
     build: ./frontend
     image: nuxt_frontend
     container_name: nuxt_frontend
@@ -55,7 +55,7 @@ services:
     #   timeout: 5s
 
   #Redis Stack Service
-  database:
+  redis_database:
     container_name: redis_database
     ports:
       - "${FORWARD_REDIS_PORT:-6379}:6379"
@@ -79,8 +79,8 @@ services:
       retries: 3
       timeout: 5s
 
-  broker:
-    container_name: broker
+  rabbitmq_broker:
+    container_name: rabbitmq_broker
     image: rabbitmq:3.7.14-management
     ports:
       - "8888:8080"
@@ -91,7 +91,7 @@ services:
       - backend-network
 
   #Nginx Service
-  server:
+  nginx_server:
     build: ./server/
     container_name: nginx_server
     restart: unless-stopped
