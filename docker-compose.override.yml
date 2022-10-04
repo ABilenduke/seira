@@ -14,12 +14,11 @@ services:
       SECRET_KEY: "sdgdgfhfjsfgjdrg"
       MAIL_SERVER: mailhog
       MAIL_PORT: 1025
-      MAIL_USERNAME: ""
-      MAIL_PASSWORD: ""
+      MAIL_USERNAME:
+      MAIL_PASSWORD:
       MAIL_DEFAULT_SENDER: "no-reply@flask-redis.test"
-      CELERY_BROKER_URL: amqp://rabbit-user:rabbit-password@rabbitmq_broker:5672/
-      CELERY_RESULT_BACKEND: rpc://
-      CELERY_BROKER_TEST_URL: amqp://rabbit-user:rabbit-password@rabbitmq_broker:5672/
+      CELERY_BROKER_URL: redis://default:${REDIS_PASSWORD:-password}@redis_database:6379/0
+      CELERY_RESULT_BACKEND: redis://default:${REDIS_PASSWORD:-password}@redis_database:6379/0
     ports:
       - 5678:5678
   #Nuxt Frontend Service
