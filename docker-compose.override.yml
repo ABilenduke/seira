@@ -28,6 +28,8 @@ services:
       target: development
     environment:
       NODE_ENV: development
+    ports:
+      - 24678:24678
     command: yarn dev -o
     # command: yarn dev-debug # for debugging WIP
   #Redis Stack Service

@@ -8,7 +8,7 @@ services:
     container_name: flask_backend
     restart: unless-stopped
     tty: true
-    command: python manage.py run -h 0.0.0.0
+    # command: python manage.py run -h 0.0.0.0
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REDIS_OM_URL: redis://default:${REDIS_PASSWORD:-password}@redis_database:6379
