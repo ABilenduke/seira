@@ -2,32 +2,76 @@ version: "3.9"
 
 services:
   #Flask Service
-  backend:
+  flask_backend:
     build: ./backend
     image: flask_backend
     container_name: flask_backend
     restart: unless-stopped
     tty: true
+    # command: python manage.py run -h 0.0.0.0
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
-      REDIS_OM_URL: redis://default:${REDIS_PASSWORD:-password}@database:6379
+      REDIS_OM_URL: redis://default:${REDIS_PASSWORD:-password}@redis_database:6379
+      APP_NAME: "Flask-Redis API"
+      APP_SETTINGS: app.config.DevelopmentConfig
+      MAIL_USE_TLS: False
+      MAIL_USE_SSL: False
     ports:
-      - '5000:5000'
+      - "5000:5000"
     working_dir: /var/www/flask_backend
     networks:
       - backend-network
     volumes:
-       - './backend:/var/www/flask_backend:cached'
+      - "./backend:/var/www/flask_backend:cached"
     depends_on:
-      - database
+      - redis_database
+      # - rabbitmq_broker
     # healthcheck:
     #   test: curl --fail -s http://localhost:5000/ || exit 1
     #   interval: 1m30s
     #   timeout: 10s
     #   retries: 3
 
+  # worker:
+  #   build: ./backend
+  #   container_name: worker
+  #   command: celery --app app.server.tasks.celery worker --loglevel=info --logfile=app/logs/celery.log
+  #   volumes:
+  #     - ./backend:/var/www/flask_backend
+  #   working_dir: /var/www/flask_backend
+  #   environment:
+  #     REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+  #     FLASK_DEBUG: 1
+  #     APP_SETTINGS: app.server.config.DevelopmentConfig
+  #     CELERY_BROKER_URL: redis://default:${REDIS_PASSWORD:-password}@redis_database:6379/0
+  #     CELERY_RESULT_BACKEND: redis://default:${REDIS_PASSWORD:-password}@redis_database:6379/0
+  #   networks:
+  #     - backend-network
+  #   depends_on:
+  #     - flask_backend
+  #     - redis_database
+
+  # dashboard:
+  #   build: ./backend
+  #   container_name: dashboard
+  #   command: celery --app app.server.tasks.celery flower --port=5555 --broker=redis://default:${REDIS_PASSWORD:-password}@redis_database:6379/1
+  #   ports:
+  #     - 5556:5555
+  #   environment:
+  #     REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+  #     FLASK_DEBUG: 1
+  #     APP_SETTINGS: app.server.config.DevelopmentConfig
+  #     CELERY_BROKER_URL: redis://default:${REDIS_PASSWORD:-password}@redis_database:6379/1
+  #     CELERY_RESULT_BACKEND: redis://default:${REDIS_PASSWORD:-password}@redis_database:6379/0
+  #   networks:
+  #     - backend-network
+  #   depends_on:
+  #     - flask_backend
+  #     - redis_database
+  #     - worker
+
   #Node Service
-  frontend:
+  nuxt_frontend:
     build: ./frontend
     image: nuxt_frontend
     container_name: nuxt_frontend
@@ -42,18 +86,18 @@ services:
     networks:
       - frontend-network
     volumes:
-       - './frontend:/var/www/nuxt_frontend:cached'
-       - 'node-modules-volume:/var/www/nuxt_frontend/node_modules'
+      - "./frontend:/var/www/nuxt_frontend:cached"
+      - "node-modules-volume:/var/www/nuxt_frontend/node_modules"
     # healthcheck:
     #   test: ["CMD", "redis-cli", "ping"]
     #   retries: 3
     #   timeout: 5s
-  
+
   #Redis Stack Service
-  database:
+  redis_database:
     container_name: redis_database
     ports:
-      - '${FORWARD_REDIS_PORT:-6379}:6379'
+      - "${FORWARD_REDIS_PORT:-6379}:6379"
     deploy:
       replicas: 1
       restart_policy:
@@ -63,7 +107,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REDIS_ARGS: "--requirepass ${REDIS_PASSWORD:-password} --appendonly yes"
     volumes:
-      - './database/appdata:/data'
+      - "./database/appdata:/data"
       # - ./database/redis.conf:/redis-stack.conf
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
@@ -74,8 +118,19 @@ services:
       retries: 3
       timeout: 5s
 
+  # rabbitmq_broker:
+  #   container_name: rabbitmq_broker
+  #   image: rabbitmq:3.7.14-management
+  #   ports:
+  #     - "8888:8080"
+  #   environment:
+  #     - RABBITMQ_DEFAULT_USER=rabbit-user
+  #     - RABBITMQ_DEFAULT_PASS=rabbit-password
+  #   networks:
+  #     - backend-network
+
   #Nginx Service
-  server:
+  nginx_server:
     build: ./server/
     container_name: nginx_server
     restart: unless-stopped
@@ -84,16 +139,16 @@ services:
       - "80:80"
       - "443:443"
     depends_on:
-      - backend
-      - frontend
+      - flask_backend
+      - nuxt_frontend
     networks:
       - backend-network
       - frontend-network
     volumes:
-      - './server/nginx.conf:/etc/nginx/nginx.conf'
-      - './server/log/:/var/log/nginx'
-      - './server/certs/:/etc/nginx/certs'
-      - './server/certs/:/etc/ssl/certs'
+      - "./server/nginx.conf:/etc/nginx/nginx.conf"
+      - "./server/log/:/var/log/nginx"
+      - "./server/certs/:/etc/nginx/certs"
+      - "./server/certs/:/etc/ssl/certs"
     # healthcheck:
     #   test: ["CMD", "redis-cli", "ping"]
     #   retries: 3
@@ -110,10 +165,6 @@ networks:
 volumes:
   node-modules-volume:
     driver: local
-    # driver_opts:
-    #   type: none
-    #   o: bind
-    #   device: ./frontend/node_modules
   database-volume:
     driver: local
     # driver_opts:

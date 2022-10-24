@@ -1,6 +1,11 @@
 #!/bin/bash
 
 # Build all of the images or the specified one
+backend_seed () {
+    docker-compose exec flask_backend python manage.py seed
+}
+
+# Build all of the images or the specified one
 build () {
     docker-compose build "${@:1}"
 }
@@ -81,8 +86,21 @@ yarn () {
 #######################################
 
 case "$1" in
-    backend:test)
-        backend:test
+    backend)
+        case "$2" in
+            seed)
+                backend_seed
+                ;;
+            *)
+                cat << EOF
+Certificate management commands.
+Usage:
+    seira cert <command>
+Available commands:
+    seed ...................................... Seed the database
+EOF
+                ;;
+        esac
         ;;
     build)
         build "${@:2}"
@@ -99,7 +117,7 @@ case "$1" in
                 cat << EOF
 Certificate management commands.
 Usage:
-    cylinder cert <command>
+    seira cert <command>
 Available commands:
     generate .................................. Generate a new certificate
     install ................................... Install the certificate
@@ -137,10 +155,12 @@ EOF
         ;;
     *)
         cat << EOF
-Command line interface for the Docker-based web development environment cylinder.
+Command line interface for the Docker-based web development environment seira.
 Usage:
-    cylinder <command> [options] [arguments]
+    seira <command> [options] [arguments]
 Available commands:
+    backend ................................... Manage the backend application
+        seed .................................. Seed the database
     build [image] ............................. Build all of the images or the specified one
     cert ...................................... Certificate management commands
         generate .............................. Generate a new certificate
