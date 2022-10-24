@@ -6,6 +6,9 @@
   "[typescript]": {
     "editor.tabSize": 2
   },
+  "[vue]": {
+    "editor.tabSize": 2
+  },
   "[python]": {
     "editor.tabSize": 4
   },
@@ -28,5 +31,5 @@
       "mode": "auto"
     }
   ],
-  "eslint.nodePath": "/var/lib/docker/volumes/flask_redis_node-modules-volume/_data"
+  "eslint.nodePath": "/var/lib/docker-desktop/volumes/flask_redis_node-modules-volume/_data"
 }
